@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lector bilingüe · inglés con traducción al toque</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#7a2e4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lector EN">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#faf8f4;--fg:#26231f;--muted:#7a7468;--card:#fff;--line:#e6e0d4;--accent:#7a2e4a;--accent2:#4b2a5e;--hl:#f3e3a3;--hl2:#f8f0cf;--shadow:0 12px 34px rgba(40,20,40,.18);--fs:20px}
+[data-theme=sepia]{--bg:#f1e6cf;--fg:#3b2f1e;--muted:#8a7a5c;--card:#fbf4e2;--line:#dccfae;--hl:#e9cf86;--hl2:#efdfb2}
+[data-theme=dark]{--bg:#17141b;--fg:#e8e3ee;--muted:#9a93a6;--card:#221d2a;--line:#342d3f;--accent:#c46a8f;--hl:#5a3f63;--hl2:#30283a;--shadow:0 12px 34px rgba(0,0,0,.55)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+button,select,input,textarea{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:6px 11px;cursor:pointer;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+.btn.icon{padding:6px 9px;min-width:34px}
+#top{position:sticky;top:0;z-index:20;display:flex;gap:6px;align-items:center;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--line)}
+#top .ttl{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+#chapSel{max-width:170px;border:1px solid var(--line);background:var(--card);border-radius:9px;padding:6px 8px;font-size:14px}
+.rd-only{display:none}
+body.reading .rd-only{display:inline-block}
+#lib{max-width:960px;margin:0 auto;padding:26px 18px 80px}
+#lib h1{font-size:28px;margin:6px 0 4px}
+#lib .sub{color:var(--muted);margin:0 0 20px;line-height:1.5}
+#drop{border:2px dashed var(--line);border-radius:16px;padding:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:26px;background:var(--card)}
+#drop.over{border-color:var(--accent);background:var(--hl2)}
+#drop .t{flex:1;min-width:220px;line-height:1.45;font-size:15px}
+#drop .t small{display:block;color:var(--muted);margin-top:2px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+.book{position:relative;border:1px solid var(--line);background:var(--card);border-radius:14px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .12s,box-shadow .12s}
+.book:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.book .cv{height:120px;display:flex;align-items:flex-end;padding:12px;color:#fff;font-family:Georgia,serif;font-size:17px;line-height:1.2;font-weight:700}
+.book .mt{padding:10px 12px 12px;font-size:13px;color:var(--muted)}
+.book .bar{height:4px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}
+.book .bar i{display:block;height:100%;background:var(--accent)}
+.book .del{position:absolute;top:6px;right:6px;border:0;background:rgba(0,0,0,.35);color:#fff;border-radius:50%;width:26px;height:26px;cursor:pointer;opacity:0;line-height:1}
+.book:hover .del,.book .del:focus{opacity:1}
+@media (hover:none){.book .del{opacity:.9}}
+.help{margin-top:30px;color:var(--muted);font-size:14px;line-height:1.6}
+.help a{color:var(--accent)}
+#reader{display:none}
+body.reading #reader{display:block}
+body.reading #lib{display:none}
+#page{max-width:690px;margin:0 auto;padding:22px 20px 160px;font-family:Georgia,"Iowan Old Style","Times New Roman",serif;font-size:var(--fs);line-height:1.72}
+#page h2{font-size:1.3em;margin:.6em 0 1em;font-family:Georgia,serif}
+.pw{position:relative;margin:0 0 1.05em}
+.pw p{margin:0}
+.w{border-radius:3px;cursor:pointer}
+@media (hover:hover){.w:hover{background:var(--hl)}}
+.w.on{background:var(--hl)}
+.sn.hl{background:var(--hl2);border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.ptr{position:absolute;left:-44px;top:.3em;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:7px;font:600 11px system-ui;padding:3px 6px;cursor:pointer;opacity:0;transition:opacity .12s;user-select:none}
+.pw:hover .ptr,.ptr.open{opacity:1}
+@media (max-width:900px){.ptr{display:none}}
+.ptx{margin:.45em 0 0;padding:.5em .8em;border-left:3px solid var(--accent);color:var(--muted);font:italic .86em/1.55 Georgia,serif;background:var(--hl2);border-radius:0 8px 8px 0}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:2.4em;font-family:system-ui,sans-serif}
+#pop{position:fixed;z-index:50;width:min(390px,calc(100vw - 20px));background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px}
+#pop[hidden]{display:none}
+#pop .hd{display:flex;align-items:center;gap:6px;padding:10px 10px 0 12px}
+#popTabs{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+.tab{border:0;background:transparent;padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted);cursor:pointer}
+.tab.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+#popBody{padding:10px 14px 6px;max-height:42vh;overflow:auto;line-height:1.5}
+#popBody .orig{color:var(--muted);font-size:13px;margin-bottom:4px;font-style:italic}
+#popBody .main{font-size:19px;font-weight:600;line-height:1.35}
+#popBody .ld{color:var(--muted)}
+#popBody .ln{font-size:14px;margin-top:6px;color:var(--fg)}
+#popBody .ln b{color:var(--accent);font-weight:600}
+#popBody .err{color:#b3261e;font-size:14px}
+#pop .ft{display:flex;align-items:center;gap:6px;padding:4px 10px 10px 12px}
+#popSrc{flex:1;font-size:11px;color:var(--muted)}
+.ib{border:1px solid var(--line);background:transparent;border-radius:9px;padding:5px 9px;cursor:pointer;font-size:15px;line-height:1}
+.ib.on{background:var(--hl);border-color:var(--accent)}
+@media (max-width:700px){#pop{left:10px!important;right:10px!important;top:auto!important;bottom:10px!important;width:auto!important}}
+#modal{position:fixed;inset:0;z-index:60;background:rgba(20,10,25,.5);display:none;align-items:center;justify-content:center;padding:14px}
+#modal.on{display:flex}
+#mbox{background:var(--card);border-radius:16px;max-width:560px;width:100%;max-height:86vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+#mbox .mh{display:flex;align-items:center;padding:14px 16px 8px;gap:8px}
+#mbox .mh h3{margin:0;flex:1;font-size:18px}
+#mbox .mb{padding:4px 16px 16px;overflow:auto}
+#mbox input[type=text],#mbox textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 11px;margin:6px 0}
+#mbox textarea{min-height:200px;resize:vertical}
+.vi{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.vi .x{flex:1;min-width:0}
+.vi .en{font-weight:600}
+.vi .es{color:var(--accent)}
+.vi .cx{font-size:12px;color:var(--muted);margin-top:2px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2b2230;color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header id="top">
+  <button class="btn icon rd-only" id="btnHome" title="Biblioteca" aria-label="Biblioteca">☰</button>
+  <div class="ttl" id="ttl">📖 Lector bilingüe</div>
+  <select id="chapSel" class="rd-only" aria-label="Capítulo"></select>
+  <button class="btn icon rd-only" id="btnBi" title="Mostrar/ocultar traducciones incluidas en el libro" aria-label="Traducciones del libro">ES</button>
+  <button class="btn icon rd-only" id="btnMinus" aria-label="Letra más pequeña">A−</button>
+  <button class="btn icon rd-only" id="btnPlus" aria-label="Letra más grande">A+</button>
+  <button class="btn icon" id="btnTheme" title="Tema" aria-label="Cambiar tema">◐</button>
+  <button class="btn icon" id="btnSet" title="Ajustes y traducción sin conexión" aria-label="Ajustes">⚙</button>
+  <button class="btn" id="btnVocab">★ <span id="vcount">0</span></button>
+</header>
+
+<main id="lib">
+  <h1>Tu biblioteca</h1>
+  <p class="sub">Lee en inglés. Toca una palabra, selecciona una frase o pide el párrafo completo y mira la traducción al instante.</p>
+  <div id="drop">
+    <div class="t"><b>Añade un libro</b><small>Arrastra aquí un archivo .epub, .txt o .json (bilingüe), o elígelo.</small></div>
+    <button class="btn primary" id="btnFile">Elegir archivo</button>
+    <button class="btn" id="btnPaste">Pegar texto</button>
+    <input type="file" id="file" accept=".epub,.txt,.json,.text,text/plain,application/epub+zip,application/json" multiple hidden>
+  </div>
+  <div id="grid"></div>
+  <div class="help">
+    <b>¿De dónde saco libros?</b><br>
+    Libros gratis y legales (dominio público) en
+    <a href="https://www.gutenberg.org" target="_blank" rel="noopener">Project Gutenberg</a> y
+    <a href="https://standardebooks.org" target="_blank" rel="noopener">Standard Ebooks</a>:
+    descarga el EPUB o el “Plain Text” y arrástralo aquí. También puedes pegar cualquier texto en inglés.<br>
+    Los libros se guardan en este dispositivo y recuerdan por dónde ibas. Todo es gratuito: sin cuentas ni claves. Para traducir sin internet, abre ⚙ Ajustes.
+  </div>
+</main>
+
+<main id="reader"><article id="page"></article></main>
+
+<div id="pop" hidden role="dialog" aria-label="Traducción">
+  <div class="hd"><div id="popTabs"></div><button class="ib" id="popClose" aria-label="Cerrar">✕</button></div>
+  <div id="popBody"></div>
+  <div class="ft"><span id="popSrc"></span><button class="ib" id="popSpeak" title="Escuchar en inglés" aria-label="Escuchar">🔊</button><button class="ib" id="popSave" title="Guardar en vocabulario" aria-label="Guardar">☆</button></div>
+</div>
+<div id="modal"><div id="mbox"><div class="mh"><h3 id="mtitle"></h3><button class="ib" id="mclose" aria-label="Cerrar">✕</button></div><div class="mb" id="mbody"></div></div></div>
+<div id="toast"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
+const uid=()=>'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms);};};
+const norm=s=>s.replace(/\s+/g,' ').trim();
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600);}
+
+/* ---------- almacenamiento (IndexedDB con respaldo en memoria) ---------- */
+const DB=(()=>{
+  let db=null;const mb=new Map(),mk=new Map();
+  const ready=new Promise(res=>{try{
+    const r=indexedDB.open('lector-bilingue',1);
+    r.onupgradeneeded=()=>{r.result.createObjectStore('books',{keyPath:'id'});r.result.createObjectStore('kv');};
+    r.onsuccess=()=>{db=r.result;res();};r.onerror=r.onblocked=()=>res();
+  }catch(e){res();}});
+  const run=(st,mode,fn)=>new Promise(res=>{try{
+    const t=db.transaction(st,mode);const rq=fn(t.objectStore(st));
+    t.oncomplete=()=>res(rq?rq.result:undefined);t.onerror=t.onabort=()=>res(undefined);
+  }catch(e){res(undefined);}});
+  return{
+    async books(){await ready;if(!db)return[...mb.values()];return(await run('books','readonly',s=>s.getAll()))||[];},
+    async putBook(b){await ready;mb.set(b.id,b);if(db)await run('books','readwrite',s=>s.put(b));},
+    async delBook(id){await ready;mb.delete(id);if(db)await run('books','readwrite',s=>s.delete(id));},
+    async get(k){await ready;if(mk.has(k))return mk.get(k);if(!db)return undefined;const v=await run('kv','readonly',s=>s.get(k));if(v!==undefined)mk.set(k,v);return v;},
+    async set(k,v){await ready;mk.set(k,v);if(db)await run('kv','readwrite',s=>s.put(v,k));}
+  };
+})();
+
+/* ---------- estado ---------- */
+const S={books:[],book:null,chap:0,set:{size:20,theme:'light',bi:false,mode:'auto'},vocab:[],prog:{}};
+
+/* ---------- texto: frases y palabras ---------- */
+const WORD_RE=/[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)*(?:-[A-Za-zÀ-ÿ]+)*|\d+(?:[.,]\d+)*/g;
+const ABBR=new Set(['mr','mrs','ms','dr','st','sr','jr','prof','vs','mt','col','gen','capt','lt','rev','hon','messrs','mme']);
+function sentenceBounds(t){
+  const out=[];let start=0;const re=/[.!?…]+["”’')\]]*(\s+)/g;let m;
+  while((m=re.exec(t))){
+    const after=m.index+m[0].length,first=t[after];
+    if(first===undefined)break;
+    if(!/[A-ZÀ-Þ“"‘'(¿¡0-9—]/.test(first))continue;
+    if(m[0][0]==='.'){
+      const before=t.slice(start,m.index);
+      const w=(before.match(/([A-Za-z]+)$/)||[])[1];
+      if(w&&(ABBR.has(w.toLowerCase())||(w.length===1&&/[A-Z]/.test(w))))continue;
+    }
+    out.push([start,after-m[1].length]);start=after;
+  }
+  out.push([start,t.length]);
+  return out;
+}
+
+/* ---------- motor de traducción: todo gratuito, sin claves ---------- */
+const mem=new Map();const fail={};
+const ENG={chrome:{tr:null,state:'?',pct:0},model:{state:'none',pct:0,worker:null,pending:new Map(),n:0,files:{},err:''}};
+const blocked=n=>fail[n]&&fail[n].until>Date.now();
+function noteFail(n){const f=fail[n]||(fail[n]={n:0,until:0});if(++f.n>=2){f.until=Date.now()+180000;f.n=0;}}
+function chunkText(text,max){
+  if(text.length<=max)return[text];
+  const out=[];let cur='';
+  sentenceBounds(text).forEach(([a,b])=>{const s=text.slice(a,b);if(cur&&cur.length+1+s.length>max){out.push(cur);cur=s;}else cur=cur?cur+' '+s:s;});
+  if(cur)out.push(cur);return out;
+}
+const timeout=(ms)=>{const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal;};
+
+/* 1) Traductor integrado de Chrome/Edge de escritorio (en tu equipo, sin internet tras descargar el idioma) */
+const CH={sourceLanguage:'en',targetLanguage:'es'};
+async function chromeStatus(){
+  if(!('Translator' in self))return'no';
+  try{return await Translator.availability(CH);}catch(e){return'no';}
+}
+async function chromeGet(activate){
+  if(ENG.chrome.tr)return ENG.chrome.tr;
+  const st=await chromeStatus();ENG.chrome.state=st;
+  if(st==='no'||st==='unavailable')return null;
+  const act=activate||(navigator.userActivation&&navigator.userActivation.isActive);
+  if((st==='downloadable'||st==='downloading')&&!act)return null;
+  ENG.chrome.tr=await Translator.create({...CH,monitor(m){m.addEventListener('downloadprogress',e=>{ENG.chrome.pct=Math.round(e.loaded*100);refreshSettings();});}});
+  ENG.chrome.state='available';return ENG.chrome.tr;
+}
+async function viaChrome(kind,text){
+  const t=await chromeGet(false);if(!t)return null;
+  const parts=[];for(const c of chunkText(text,900))parts.push(await t.translate(c));
+  return{main:parts.join(' '),lines:[],src:'Traductor de Chrome (en tu equipo)'};
+}
+
+/* 2) Modelo local opus-mt en→es (Transformers.js): se descarga una vez (~115 MB) y funciona sin internet */
+function modelWorker(){
+  if(ENG.model.worker)return ENG.model.worker;
+  const w=new Worker('mt-worker.js',{type:'module'});
+  w.onmessage=e=>{
+    const m=e.data;
+    if(m.type==='progress'){
+      const p=m.p||{};
+      if(p.file&&p.total){ENG.model.files[p.file]={l:p.loaded||0,t:p.total};
+        const v=Object.values(ENG.model.files);const L=v.reduce((a,x)=>a+x.l,0),T=v.reduce((a,x)=>a+x.t,0);
+        ENG.model.pct=T?Math.min(99,Math.round(L/T*100)):0;refreshSettings();}
+      return;
+    }
+    const p=ENG.model.pending.get(m.id);if(!p)return;ENG.model.pending.delete(m.id);
+    m.type==='error'?p.rej(new Error(m.message)):p.res(m);
+  };
+  w.onerror=e=>{ENG.model.pending.forEach(p=>p.rej(new Error('El worker falló')));ENG.model.pending.clear();ENG.model.worker=null;};
+  return ENG.model.worker=w;
+}
+function modelCall(type,text){
+  return new Promise((res,rej)=>{const id=++ENG.model.n;ENG.model.pending.set(id,{res,rej});modelWorker().postMessage({id,type,text});});
+}
+async function modelLoad(){
+  if(ENG.model.state==='loading'||ENG.model.state==='ready')return;
+  ENG.model.state='loading';ENG.model.err='';refreshSettings();
+  try{await modelCall('load');ENG.model.state='ready';ENG.model.pct=100;await DB.set('modelOn',true);}
+  catch(e){ENG.model.state='error';ENG.model.err=e.message||'error';ENG.model.worker=null;}
+  refreshSettings();
+}
+async function viaModel(kind,text){
+  if(ENG.model.state!=='ready')return null;
+  const parts=[];for(const c of chunkText(text,350))parts.push((await modelCall('translate',c)).text);
+  return{main:parts.join(' '),lines:[],src:'Modelo local (funciona sin internet)'};
+}
+
+/* 3) Google Translate (endpoint web gratuito, NO oficial: puede cambiar o limitarse) */
+async function gOne(text,word){
+  const r=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&dt=bd&q='+encodeURIComponent(text),{signal:timeout(7000)});
+  if(!r.ok)throw new Error('http '+r.status);
+  const d=await r.json();
+  return{main:(d[0]||[]).map(x=>x[0]).filter(Boolean).join(''),lines:word&&Array.isArray(d[1])?d[1].slice(0,4).map(g=>[g[0],(g[1]||[]).slice(0,5).join(', ')]):[]};
+}
+async function viaGoogle(kind,text){
+  const parts=[];let lines=[];
+  for(const c of chunkText(text,1100)){const r=await gOne(c,kind==='word');parts.push(r.main);if(r.lines.length)lines=r.lines;}
+  return{main:parts.join(' '),lines,src:'Google Translate (en línea)'};
+}
+/* 4) MyMemory (respaldo gratuito en línea) */
+async function viaMM(kind,text){
+  if(text.length>450)return null;
+  const r=await fetch('https://api.mymemory.translated.net/get?langpair=en|es&q='+encodeURIComponent(text),{signal:timeout(7000)});
+  if(!r.ok)throw new Error('http '+r.status);
+  const d=await r.json();const t=d&&d.responseData&&d.responseData.translatedText;
+  if(!t)throw new Error('vacío');
+  return{main:t,lines:[],src:'MyMemory (en línea)'};
+}
+const RUN={chrome:viaChrome,google:viaGoogle,model:viaModel,mm:viaMM};
+function engineOrder(kind){
+  if(S.set.mode==='local')return['chrome','model'];
+  return kind==='word'?['google','chrome','model','mm']:['chrome','google','model','mm'];
+}
+async function translate(kind,text,ctx){
+  if(kind==='para'&&ctx&&ctx.pre)return{main:ctx.pre,lines:[],src:'traducción incluida en el libro'};
+  const key='tr|'+kind+'|'+text;
+  if(mem.has(key))return mem.get(key);
+  const saved=await DB.get(key);if(saved){mem.set(key,saved);return saved;}
+  let res=null;
+  for(const n of engineOrder(kind)){
+    if(blocked(n))continue;
+    try{const r=await RUN[n](kind,text);if(r&&r.main){res=r;break;}}catch(e){noteFail(n);}
+  }
+  if(!res)throw new Error('sin-motor');
+  mem.set(key,res);DB.set(key,res);
+  return res;
+}
+async function speak(text){
+  try{if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.9;speechSynthesis.cancel();speechSynthesis.speak(u);}else toast('Tu navegador no puede leer en voz alta');}catch(e){toast('No pude reproducir el audio');}
+}
+
+/* ---------- importar libros ---------- */
+function mkBook({title,author,chapters,sample}){
+  const ch=(chapters||[]).map((c,i)=>({
+    title:c.title||('Capítulo '+(i+1)),
+    paras:(c.paras||c.paragraphs||[]).map(p=>typeof p==='string'?{en:p}:{en:String(p.en||p.text||''),es:p.es||p.tr||undefined}).filter(p=>p.en.trim())
+  })).filter(c=>c.paras.length);
+  if(!ch.length)throw new Error('No encontré texto en ese archivo.');
+  return{id:uid(),title:title||'Sin título',author:author||'',chapters:ch,added:Date.now(),sample:!!sample};
+}
+function chunkChapters(paras,per){
+  const out=[];for(let i=0;i<paras.length;i+=per)out.push({title:'Parte '+(out.length+1),paras:paras.slice(i,i+per)});return out;
+}
+function parseTxt(text,fallbackTitle){
+  text=text.replace(/\r\n?/g,'\n');
+  const tm=text.match(/^Title:\s*(.+)$/m),am=text.match(/^Author:\s*(.+)$/m);
+  const s=text.search(/\*\*\* ?START OF (THE|THIS) PROJECT GUTENBERG[^\n]*\n/i);
+  if(s>=0)text=text.slice(text.indexOf('\n',s)+1);
+  const e=text.search(/\*\*\* ?END OF (THE|THIS) PROJECT GUTENBERG/i);
+  if(e>=0)text=text.slice(0,e);
+  const paras=text.split(/\n\s*\n/).map(p=>p.replace(/\s*\n\s*/g,' ').trim()).filter(Boolean);
+  const isHead=p=>p.length<=80&&(/^(chapter|cap[ií]tulo|part|book|section|act|scene|prologue|epilogue|preface)\b/i.test(p)||/^[IVXLC]+\.?$/.test(p));
+  let chs=[],cur={title:'Inicio',paras:[]};
+  for(let i=0;i<paras.length;i++){
+    const p=paras[i];
+    if(isHead(p)){
+      if(cur.paras.length)chs.push(cur);
+      let t=p;const nx=paras[i+1];
+      if(nx&&nx.length<60&&!/[.!?]$/.test(nx)&&!isHead(nx)){t+=' — '+nx;i++;}
+      cur={title:t,paras:[]};
+    }else cur.paras.push(p);
+  }
+  if(cur.paras.length)chs.push(cur);
+  chs=chs.filter(c=>c.paras.length>=2);
+  if(chs.length<=1&&paras.length>80)chs=chunkChapters(paras,40);
+  if(!chs.length)chs=[{title:'Texto',paras}];
+  return mkBook({title:tm?tm[1].trim():fallbackTitle,author:am?am[1].trim():'',chapters:chs});
+}
+function parseJson(txt){
+  const j=JSON.parse(txt);
+  if(j.chapters)return mkBook(j);
+  if(j.paragraphs)return mkBook({title:j.title,author:j.author,chapters:[{title:j.title,paras:j.paragraphs}]});
+  throw new Error('El JSON necesita "chapters" o "paragraphs".');
+}
+async function loadJSZip(){
+  if(window.JSZip)return;
+  await new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';s.onload=ok;s.onerror=()=>ko(new Error('No pude cargar el lector de EPUB. Prueba con el .txt del libro.'));document.head.append(s);});
+}
+function resolvePath(base,href){
+  const parts=(base+decodeURIComponent(href.split('#')[0])).split('/'),out=[];
+  parts.forEach(p=>{if(p==='..')out.pop();else if(p&&p!=='.')out.push(p);});return out.join('/');
+}
+async function parseEpub(file){
+  await loadJSZip();
+  const zip=await JSZip.loadAsync(await file.arrayBuffer());
+  const rd=async p=>{const f=zip.file(p);return f?await f.async('string'):null;};
+  const dp=new DOMParser();
+  const cont=dp.parseFromString(await rd('META-INF/container.xml'),'application/xml');
+  const opfPath=cont.getElementsByTagName('rootfile')[0].getAttribute('full-path');
+  const opf=dp.parseFromString(await rd(opfPath),'application/xml');
+  const base=opfPath.includes('/')?opfPath.slice(0,opfPath.lastIndexOf('/')+1):'';
+  const man={};[...opf.getElementsByTagName('item')].forEach(i=>man[i.getAttribute('id')]=i.getAttribute('href'));
+  const title=(opf.getElementsByTagName('dc:title')[0]||{}).textContent,author=(opf.getElementsByTagName('dc:creator')[0]||{}).textContent;
+  const chapters=[];
+  for(const ir of [...opf.getElementsByTagName('itemref')]){
+    const href=man[ir.getAttribute('idref')];if(!href)continue;
+    const html=await rd(resolvePath(base,href));if(!html)continue;
+    const doc=dp.parseFromString(html,'text/html');
+    doc.querySelectorAll('script,style,nav').forEach(n=>n.remove());
+    let ct='';const paras=[];
+    doc.body.querySelectorAll('h1,h2,h3,p,li').forEach(n=>{
+      const t=norm(n.textContent||'');if(!t)return;
+      if(/^H[123]$/.test(n.tagName)){if(!ct)ct=t;return;}
+      paras.push(t);
+    });
+    if(paras.join(' ').length<300)continue;
+    chapters.push({title:ct||('Capítulo '+(chapters.length+1)),paras});
+  }
+  return mkBook({title:(title||file.name.replace(/\.epub$/i,'')).trim(),author:(author||'').trim(),chapters});
+}
+async function importFile(f){
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  let b;
+  if(ext==='epub')b=await parseEpub(f);
+  else if(ext==='json')b=parseJson(await f.text());
+  else b=parseTxt(await f.text(),f.name.replace(/\.[^.]+$/,''));
+  await addBook(b);toast('Añadido: '+b.title);
+}
+async function addBook(b){S.books.unshift(b);await DB.putBook(b);renderLib();}
+
+/* ---------- libro de ejemplo (texto original, con traducción incluida) ---------- */
+const SAMPLE={title:'The Lost Keys',author:'Relato de ejemplo (nivel A2–B1)',sample:true,chapters:[
+{title:'1. A Strange Morning',paras:[
+{en:'Maria woke up early on Saturday morning. The sun was shining through the window, and the street outside was quiet. She stretched her arms, put on her slippers, and went to the kitchen to make coffee.',es:'María despertó temprano el sábado por la mañana. El sol brillaba a través de la ventana y la calle de afuera estaba tranquila. Estiró los brazos, se puso las pantuflas y fue a la cocina a preparar café.'},
+{en:'When she opened her bag to look for her keys, she found nothing. She checked her pockets, the table, and even the refrigerator. The keys were gone.',es:'Cuando abrió su bolso para buscar las llaves, no encontró nada. Revisó sus bolsillos, la mesa e incluso la nevera. Las llaves habían desaparecido.'},
+{en:'“This is impossible,” she said to herself. “I had them yesterday evening when I came home from work.” She sat down and tried to remember every step of the night before.',es:'«Esto es imposible», se dijo a sí misma. «Las tenía ayer por la tarde cuando llegué del trabajo». Se sentó e intentó recordar cada paso de la noche anterior.'},
+{en:'She remembered buying bread at the bakery, talking to her neighbor about the weather, and feeding the old cat that lives on the stairs. After that, everything was a blur.',es:'Recordó que compró pan en la panadería, que habló con su vecino sobre el clima y que le dio de comer al gato viejo que vive en las escaleras. Después de eso, todo era borroso.'},
+{en:'Suddenly, she heard a soft noise outside her door. Someone was scratching the wood. Maria walked slowly to the door and opened it.',es:'De repente, escuchó un ruido suave afuera de su puerta. Alguien estaba rasguñando la madera. María caminó despacio hasta la puerta y la abrió.'},
+{en:'On the floor sat the old gray cat. Next to its paws, shining in the morning light, were her keys. Maria laughed out loud. The cat looked at her as if nothing special had happened.',es:'En el piso estaba sentado el viejo gato gris. Junto a sus patas, brillando con la luz de la mañana, estaban sus llaves. María se rió a carcajadas. El gato la miró como si no hubiera pasado nada especial.'}]},
+{title:'2. The Mystery of the Cat',paras:[
+{en:'Maria picked up the keys and looked closely at the cat. “How did you get these?” she asked. The cat only blinked slowly and walked away down the stairs.',es:'María recogió las llaves y miró de cerca al gato. «¿Cómo las conseguiste?», preguntó. El gato solo parpadeó despacio y se fue escaleras abajo.'},
+{en:'She decided to follow it. Downstairs, the neighbor, Mr. Lopez, was watering the plants in front of his door. “Good morning, Maria!” he said. “Did you find your keys? You left them in the door last night, so I took them out and put them on your step.”',es:'Decidió seguirlo. Abajo, el vecino, el señor López, estaba regando las plantas frente a su puerta. «¡Buenos días, María!», dijo. «¿Encontraste tus llaves? Las dejaste en la puerta anoche, así que las saqué y las puse en tu escalón».'},
+{en:'Maria felt both relieved and a little embarrassed. “Thank you so much,” she said. “I don’t know what I would do without good neighbors.”',es:'María se sintió aliviada y un poco avergonzada a la vez. «Muchas gracias», dijo. «No sé qué haría sin buenos vecinos».'},
+{en:'Mr. Lopez smiled. “It is nothing. But maybe you should buy the cat some food. He seems to be a very good guard.”',es:'El señor López sonrió. «No es nada. Pero quizás deberías comprarle comida al gato. Parece ser un muy buen guardia».'},
+{en:'That afternoon, Maria went to the market and bought a small bag of fish for the cat. When she came home, the cat was waiting on the stairs, as if it already knew.',es:'Esa tarde, María fue al mercado y compró una bolsita de pescado para el gato. Cuando llegó a casa, el gato la esperaba en las escaleras, como si ya lo supiera.'},
+{en:'From that day on, Maria never lost her keys again. And every Saturday morning, she shared her breakfast with a very important friend.',es:'Desde ese día, María nunca volvió a perder sus llaves. Y cada sábado por la mañana compartía su desayuno con un amigo muy importante.'}]}
+]};
+
+/* ---------- biblioteca ---------- */
+function hue(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return 275+(h%85);}
+function pct(b){const p=S.prog[b.id];if(!p)return 0;const n=b.chapters.length;const len=b.chapters[p.chap]?b.chapters[p.chap].paras.length:1;return Math.min(100,Math.round(((p.chap+(p.para||0)/len)/n)*100));}
+function renderLib(){
+  const g=$('#grid');g.replaceChildren();
+  S.books.slice().sort((a,b)=>((S.prog[b.id]||{}).t||b.added)-((S.prog[a.id]||{}).t||a.added)).forEach(b=>{
+    const c=el('div','book');c.tabIndex=0;
+    const cv=el('div','cv',b.title);const h=hue(b.title);cv.style.background=`linear-gradient(135deg,hsl(${h} 45% 32%),hsl(${(h+30)%360} 50% 22%))`;
+    const mt=el('div','mt');mt.append(el('div',null,b.author||'—'),el('div',null,b.chapters.length+' cap. · '+b.chapters.reduce((a,x)=>a+x.paras.length,0)+' párr.'));
+    const bar=el('div','bar'),i=el('i');i.style.width=pct(b)+'%';bar.append(i);mt.append(bar);
+    const d=el('button','del','✕');d.title='Eliminar libro';d.setAttribute('aria-label','Eliminar '+b.title);
+    d.onclick=async ev=>{ev.stopPropagation();if(!d.dataset.ok){d.dataset.ok=1;d.textContent='¿Borrar?';d.style.width='auto';d.style.padding='0 8px';d.style.borderRadius='13px';d.style.opacity=1;setTimeout(()=>{delete d.dataset.ok;d.textContent='✕';d.style.cssText='';},2500);return;}
+      S.books=S.books.filter(x=>x.id!==b.id);await DB.delBook(b.id);renderLib();};
+    c.append(cv,mt,d);
+    c.onclick=()=>openBook(b.id);c.onkeydown=e=>{if(e.key==='Enter')openBook(b.id);};
+    g.append(c);
+  });
+  if(!S.books.length)g.append(el('p','sub','Aún no tienes libros. Añade uno arriba.'));
+}
+
+/* ---------- lector ---------- */
+function renderPara(p,idx){
+  const w=el('div','pw');w.dataset.i=idx;
+  const par=el('p');const t=p.en;
+  sentenceBounds(t).forEach(([a,b],si,arr)=>{
+    const sn=el('span','sn');sn.dataset.s=si;
+    const seg=t.slice(a,b);let last=0,m;WORD_RE.lastIndex=0;
+    while((m=WORD_RE.exec(seg))){
+      if(m.index>last)sn.append(seg.slice(last,m.index));
+      sn.append(el('span','w',m[0]));last=m.index+m[0].length;
+    }
+    if(last<seg.length)sn.append(seg.slice(last));
+    par.append(sn);
+    const nextStart=si+1<arr.length?arr[si+1][0]:t.length;
+    if(nextStart>b)par.append(t.slice(b,nextStart));
+  });
+  const btn=el('button','ptr','ES');btn.title='Traducir este párrafo';btn.setAttribute('aria-label','Traducir párrafo');
+  btn.onclick=async()=>{
+    const ex=w.querySelector('.ptx');
+    if(ex){ex.remove();btn.classList.remove('open');return;}
+    const box=el('div','ptx','Traduciendo…');w.append(box);btn.classList.add('open');
+    try{const r=await translate('para',t,{pre:p.es});box.textContent=r.main;}catch(e){box.textContent=errMsg();}
+  };
+  w.append(btn,par);
+  if(S.set.bi&&p.es)w.append(el('div','ptx',p.es));
+  return w;
+}
+function renderChapter(startPara){
+  closePop();
+  const b=S.book,c=b.chapters[S.chap],pg=$('#page');pg.replaceChildren();
+  pg.append(el('h2',null,c.title));
+  c.paras.forEach((p,i)=>pg.append(renderPara(p,i)));
+  const nav=el('div','nav');
+  const pv=el('button','btn','← Anterior'),nx=el('button','btn primary','Siguiente →');
+  pv.disabled=S.chap===0;nx.disabled=S.chap>=b.chapters.length-1;
+  pv.onclick=()=>goChap(S.chap-1);nx.onclick=()=>goChap(S.chap+1);
+  nav.append(pv,nx);pg.append(nav);
+  const sel=$('#chapSel');sel.replaceChildren();
+  b.chapters.forEach((ch,i)=>{const o=el('option',null,ch.title.length>34?ch.title.slice(0,34)+'…':ch.title);o.value=i;sel.append(o);});
+  sel.value=S.chap;$('#ttl').textContent=b.title;
+  if(startPara>0){const t=pg.querySelector(`.pw[data-i="${startPara}"]`);if(t)t.scrollIntoView({block:'start'});window.scrollBy(0,-60);}
+  else window.scrollTo(0,0);
+  saveProg(startPara||0);
+}
+function goChap(i){if(i<0||i>=S.book.chapters.length)return;S.chap=i;renderChapter(0);}
+function openBook(id){
+  S.book=S.books.find(b=>b.id===id);if(!S.book)return;
+  const p=S.prog[id]||{chap:0,para:0};
+  S.chap=Math.min(p.chap||0,S.book.chapters.length-1);
+  document.body.classList.add('reading');
+  renderChapter(p.para||0);
+}
+function goHome(){closePop();document.body.classList.remove('reading');$('#ttl').textContent='📖 Lector bilingüe';renderLib();window.scrollTo(0,0);}
+function saveProg(para){
+  if(!S.book)return;
+  S.prog[S.book.id]={chap:S.chap,para,t:Date.now()};DB.set('prog',S.prog);
+}
+const onScroll=debounce(()=>{
+  if(!document.body.classList.contains('reading'))return;
+  const ps=document.querySelectorAll('#page .pw');let idx=0;
+  for(const p of ps){if(p.getBoundingClientRect().bottom>70){idx=+p.dataset.i;break;}}
+  saveProg(idx);
+},500);
+window.addEventListener('scroll',onScroll,{passive:true});
+
+/* ---------- ventana de traducción ---------- */
+let cur=null;
+const pop=$('#pop');
+function errMsg(){return S.set.mode==='local'?'Ningún traductor local está listo. Abre ⚙ Ajustes: activa el traductor de Chrome o descarga el modelo sin conexión.':'No pude traducir ahora (¿sin internet?). Abre ⚙ Ajustes y descarga el modelo local: así traduce sin conexión.';}
+function buildTabs(c){
+  const t=[];
+  if(c.word)t.push({k:'word',label:'Palabra',text:c.word});
+  if(c.sel&&(!c.sentence||norm(c.sel)!==norm(c.sentence)))t.push({k:'sel',label:'Selección',text:norm(c.sel)});
+  if(c.sentence)t.push({k:'sentence',label:'Frase',text:norm(c.sentence)});
+  if(c.para)t.push({k:'para',label:'Párrafo',text:c.para,pre:c.pre});
+  return t;
+}
+function clearMarks(){document.querySelectorAll('.w.on,.sn.hl').forEach(n=>n.classList.remove('on','hl'));}
+function openPop(ctx,rect){
+  clearMarks();
+  if(ctx.wEl){ctx.wEl.classList.add('on');if(ctx.snEl)ctx.snEl.classList.add('hl');}
+  cur={ctx,rect,tabs:buildTabs(ctx),tab:0,tok:0};
+  pop.hidden=false;showTab(0);
+}
+function closePop(){clearMarks();cur=null;pop.hidden=true;}
+function place(){
+  if(!cur||innerWidth<=700)return;
+  const r=cur.rect,w=pop.offsetWidth,h=pop.offsetHeight;
+  let x=r.left+r.width/2-w/2;x=Math.max(10,Math.min(innerWidth-w-10,x));
+  let y=r.bottom+10;if(y+h>innerHeight-10)y=Math.max(10,r.top-h-10);
+  pop.style.left=x+'px';pop.style.top=y+'px';
+}
+function isSaved(text){return S.vocab.some(v=>v.text.toLowerCase()===text.toLowerCase());}
+function paintSave(){
+  if(!cur)return;const t=cur.tabs[cur.tab];const b=$('#popSave');
+  const on=isSaved(t.text);b.textContent=on?'★':'☆';b.classList.toggle('on',on);
+}
+async function showTab(i){
+  const me=cur;me.tab=i;const tok=++me.tok;const t=me.tabs[i];
+  const tb=$('#popTabs');tb.replaceChildren();
+  me.tabs.forEach((x,j)=>{const b=el('button','tab'+(j===i?' on':''),x.label);b.onclick=()=>showTab(j);tb.append(b);});
+  const body=$('#popBody');
+  body.replaceChildren(el('div','orig',t.text.length>150?t.text.slice(0,150)+'…':t.text),el('div','ld','Traduciendo…'));
+  $('#popSrc').textContent='';paintSave();place();
+  try{
+    const r=await translate(t.k,t.text,{sentence:me.ctx.sentence,pre:t.pre});
+    if(cur!==me||me.tok!==tok)return;
+    me.res=r;
+    body.replaceChildren(el('div','orig',t.text.length>150?t.text.slice(0,150)+'…':t.text),el('div','main',r.main));
+    (r.lines||[]).forEach(([k,v])=>{if(!v)return;const l=el('div','ln');l.append(el('b',null,k+': '),document.createTextNode(v));body.append(l);});
+    $('#popSrc').textContent='vía '+r.src;
+  }catch(e){
+    if(cur!==me||me.tok!==tok)return;
+    body.replaceChildren(el('div','orig',t.text.length>150?t.text.slice(0,150)+'…':t.text),el('div','err',errMsg()));
+  }
+  place();
+}
+function nodeEl(n){return n&&(n.nodeType===3?n.parentElement:n);}
+function ctxFrom(elm){
+  const pw=elm&&elm.closest&&elm.closest('.pw');if(!pw)return{};
+  const p=S.book.chapters[S.chap].paras[+pw.dataset.i];
+  const sn=elm.closest('.sn');
+  return{pw,snEl:sn,sentence:sn?norm(sn.textContent):'',para:p.en,pre:p.es};
+}
+function showWord(w){
+  const c=ctxFrom(w);c.word=w.textContent;c.wEl=w;
+  openPop(c,w.getBoundingClientRect());
+}
+function showSelection(sel,txt){
+  const a=nodeEl(sel.anchorNode),f=nodeEl(sel.focusNode);
+  const pa=a&&a.closest('.pw'),pf=f&&f.closest('.pw');
+  const rect=sel.getRangeAt(0).getBoundingClientRect();
+  const clean=norm(txt);
+  if(!clean)return;
+  if(pa&&pa===pf){
+    const c=ctxFrom(a);c.snEl=null;
+    if(/^[A-Za-zÀ-ÿ'’-]+$/.test(clean)){c.word=clean;c.snEl=a.closest('.sn');}
+    else c.sel=clean;
+    openPop(c,rect);
+  }else openPop({sel:clean},rect);
+}
+let lastPtr='mouse';
+document.addEventListener('pointerdown',e=>{lastPtr=e.pointerType||'mouse';});
+document.addEventListener('pointerup',e=>{
+  if(e.target.closest&&(e.target.closest('#pop')||e.target.closest('#modal')||e.target.closest('.ptr')||e.target.closest('#top')))return;
+  if(!document.body.classList.contains('reading'))return;
+  setTimeout(()=>{
+    const sel=getSelection(),txt=sel&&!sel.isCollapsed?sel.toString().trim():'';
+    const inPage=sel&&sel.rangeCount&&$('#page').contains(sel.anchorNode);
+    if(txt&&inPage){showSelection(sel,txt);return;}
+    const w=e.target.closest&&e.target.closest('.w');
+    if(w&&$('#page').contains(w)){showWord(w);return;}
+    closePop();
+  },20);
+});
+document.addEventListener('selectionchange',debounce(()=>{
+  if(lastPtr!=='touch'||!document.body.classList.contains('reading'))return;
+  const sel=getSelection();
+  if(sel&&!sel.isCollapsed&&sel.rangeCount&&$('#page').contains(sel.anchorNode)&&sel.toString().trim())showSelection(sel,sel.toString().trim());
+},500));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePop();closeModal();}});
+window.addEventListener('resize',place);
+$('#popClose').onclick=closePop;
+$('#popSpeak').onclick=()=>{if(cur)speak(cur.tabs[cur.tab].text);};
+$('#popSave').onclick=async()=>{
+  if(!cur)return;const t=cur.tabs[cur.tab];
+  const i=S.vocab.findIndex(v=>v.text.toLowerCase()===t.text.toLowerCase());
+  if(i>=0){S.vocab.splice(i,1);toast('Quitado del vocabulario');}
+  else{
+    if(!cur.res){toast('Espera a que cargue la traducción');return;}
+    S.vocab.unshift({id:uid(),text:t.text,tr:cur.res.main,sentence:cur.ctx.sentence||'',book:S.book?S.book.title:'',t:Date.now()});toast('Guardado en tu vocabulario ★');
+  }
+  DB.set('vocab',S.vocab);$('#vcount').textContent=S.vocab.length;paintSave();
+};
+
+/* ---------- modales ---------- */
+function openModal(title,node){$('#mtitle').textContent=title;$('#mbody').replaceChildren(node);$('#modal').classList.add('on');}
+function closeModal(){$('#modal').classList.remove('on');}
+$('#mclose').onclick=closeModal;
+$('#modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal')closeModal();});
+function openVocab(){
+  const box=el('div');
+  if(!S.vocab.length)box.append(el('p','sub','Todavía no guardaste nada. En la ventana de traducción toca ☆ para guardar una palabra o frase.'));
+  else{
+    const tsv=S.vocab.map(v=>[v.text,v.tr,v.sentence].map(x=>String(x).replace(/\t|\n/g,' ')).join('\t')).join('\n');
+    const row=el('div');row.style.cssText='display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap';
+    const cp=el('button','btn primary','Copiar todo (Anki / Excel)');
+    cp.onclick=async()=>{try{await navigator.clipboard.writeText(tsv);toast('Copiado');}catch(e){ta.style.display='block';ta.select();toast('Copia el texto de abajo manualmente');}};
+    row.append(cp);
+    const ta=el('textarea');ta.value=tsv;ta.readOnly=true;ta.style.display='none';ta.style.minHeight='120px';
+    box.append(row,ta);
+    S.vocab.forEach(v=>{
+      const r=el('div','vi'),x=el('div','x');
+      x.append(el('div','en',v.text),el('div','es',v.tr));
+      if(v.sentence)x.append(el('div','cx','“'+(v.sentence.length>120?v.sentence.slice(0,120)+'…':v.sentence)+'” · '+v.book));
+      const sp=el('button','ib','🔊');sp.onclick=()=>speak(v.text);
+      const d=el('button','ib','✕');d.onclick=()=>{S.vocab=S.vocab.filter(z=>z.id!==v.id);DB.set('vocab',S.vocab);$('#vcount').textContent=S.vocab.length;openVocab();};
+      r.append(x,sp,d);box.append(r);
+    });
+  }
+  openModal('Tu vocabulario ('+S.vocab.length+')',box);
+}
+function openPaste(){
+  const box=el('div');
+  const ti=el('input');ti.type='text';ti.placeholder='Título (opcional)';
+  const ta=el('textarea');ta.placeholder='Pega aquí el texto en inglés. Separa los párrafos con una línea en blanco.';
+  const go=el('button','btn primary','Añadir a mi biblioteca');
+  go.onclick=async()=>{
+    if(ta.value.trim().length<20){toast('Pega un poco más de texto');return;}
+    try{await addBook(parseTxt(ta.value,ti.value.trim()||'Texto pegado'));closeModal();toast('Añadido');}catch(e){toast(e.message);}
+  };
+  box.append(ti,ta,go);openModal('Pegar texto',box);
+}
+
+/* ---------- ajustes y eventos de la interfaz ---------- */
+function applySet(){
+  document.documentElement.dataset.theme=S.set.theme;
+  document.documentElement.style.setProperty('--fs',S.set.size+'px');
+  $('#btnBi').style.opacity=S.set.bi?1:.55;
+}
+function saveSet(){DB.set('set',S.set);applySet();}
+$('#btnMinus').onclick=()=>{S.set.size=Math.max(14,S.set.size-2);saveSet();};
+$('#btnPlus').onclick=()=>{S.set.size=Math.min(34,S.set.size+2);saveSet();};
+$('#btnTheme').onclick=()=>{const o=['light','sepia','dark'];S.set.theme=o[(o.indexOf(S.set.theme)+1)%3];saveSet();};
+$('#btnBi').onclick=()=>{S.set.bi=!S.set.bi;saveSet();if(S.book)renderChapter(+((document.querySelector('#page .pw')||{dataset:{i:0}}).dataset.i)||0);toast(S.set.bi?'Mostrando traducciones incluidas en el libro':'Traducciones ocultas');};
+$('#btnHome').onclick=goHome;
+$('#btnVocab').onclick=openVocab;
+$('#chapSel').onchange=e=>goChap(+e.target.value);
+$('#btnFile').onclick=()=>$('#file').click();
+$('#btnPaste').onclick=openPaste;
+async function handleFiles(fs){
+  for(const f of fs){try{toast('Procesando '+f.name+'…');await importFile(f);}catch(e){toast('No pude leer '+f.name+': '+e.message);}}
+}
+$('#file').onchange=async e=>{await handleFiles([...e.target.files]);e.target.value='';};
+const drop=$('#drop');
+['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>handleFiles([...e.dataTransfer.files]));
+['dragover','drop'].forEach(n=>document.addEventListener(n,e=>{if(!e.target.closest||!e.target.closest('#drop'))e.preventDefault();}));
+
+
+/* ---------- ajustes: motores de traducción e instalación ---------- */
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;});
+function refreshSettings(){if($('#modal').classList.contains('on')&&$('#mtitle').textContent==='Ajustes y traducción')openSettings();}
+function openSettings(){
+  const box=el('div');box.style.lineHeight='1.5';
+  const h=(t)=>{const x=el('div',null,t);x.style.cssText='font-weight:700;margin:14px 0 6px';return x;};
+  const note=(t)=>{const x=el('div',null,t);x.style.cssText='font-size:13px;color:var(--muted);margin:2px 0 6px';return x;};
+  const row=(name,status,btn)=>{const r=el('div','vi');const x=el('div','x');x.append(el('div','en',name),el('div','cx',status));r.append(x);if(btn)r.append(btn);return r;};
+  const mk=(label,fn,primary)=>{const b=el('button','btn'+(primary?' primary':''),label);b.onclick=fn;return b;};
+
+  box.append(h('Modo de traducción'));
+  const g=el('div');g.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+  const mA=mk('Automático',()=>{S.set.mode='auto';saveSet();openSettings();},S.set.mode==='auto');
+  const mL=mk('Solo sin conexión',()=>{S.set.mode='local';saveSet();openSettings();},S.set.mode==='local');
+  g.append(mA,mL);box.append(g,note(S.set.mode==='auto'?'Usa primero lo que hay en tu equipo y, si no alcanza, servicios gratuitos en línea.':'Nunca usa internet para traducir: solo el traductor de Chrome o el modelo descargado.'));
+
+  box.append(h('Traducir sin internet (gratis, sin límites)'));
+  const c=ENG.chrome;let cs,cb=null;
+  if(c.state==='available')cs='Listo ✓ (traduce en tu equipo)';
+  else if(c.state==='downloadable')cs='Disponible: descarga el idioma una vez';
+  else if(c.state==='downloading')cs='Descargando… '+(c.pct||0)+'%';
+  else if(c.state==='unavailable')cs='Tu equipo no lo soporta.';
+  else if(c.state==='no')cs='No disponible en este navegador (solo Chrome o Edge de escritorio recientes; no funciona en celulares).';
+  else cs='Comprobando…';
+  if(c.state==='downloadable'||c.state==='downloading')cb=mk('Activar',async()=>{try{await chromeGet(true);toast('Traductor de Chrome listo');}catch(e){toast('No pude activarlo: '+(e.message||e));}openSettings();},true);
+  box.append(row('Traductor integrado de Chrome',cs,cb));
+  const m=ENG.model;let ms,mb=null;
+  if(m.state==='ready')ms='Listo ✓ (guardado en tu dispositivo)';
+  else if(m.state==='loading')ms='Descargando… '+m.pct+'% (una sola vez, ~115 MB)';
+  else if(m.state==='error')ms='Error: '+m.err;
+  else ms='No descargado. Funciona en cualquier navegador moderno; la primera vez baja ~115 MB (usa Wi‑Fi).';
+  if(m.state==='none'||m.state==='error')mb=mk(m.state==='error'?'Reintentar':'Descargar',()=>{modelLoad();openSettings();},true);
+  box.append(row('Modelo local (opus-mt en→es)',ms,mb));
+  box.append(note('El modelo traduce bien frases y párrafos; las palabras sueltas salen mejor con Google (en línea), que añade significados alternativos.'));
+
+  box.append(h('Respaldo en línea (gratuito)'));
+  box.append(row('Google Translate (web, no oficial)',blocked('google')?'Pausado unos minutos por fallos':'Se usa si hay internet. Puede cambiar o limitarse sin aviso.'));
+  box.append(row('MyMemory','Respaldo para textos cortos.'));
+
+  box.append(h('Instalar como app'));
+  if(deferredInstall)box.append(row('Instalar en este dispositivo','Se abre en su propia ventana y funciona sin conexión.',mk('Instalar',async()=>{deferredInstall.prompt();try{await deferredInstall.userChoice;}catch(e){}deferredInstall=null;openSettings();},true)));
+  else box.append(note('En Chrome/Edge: menú ⋮ → “Instalar app”. En iPhone (Safari): Compartir → “Añadir a pantalla de inicio”.'));
+  openModal('Ajustes y traducción',box);
+}
+$('#btnSet').onclick=openSettings;
+
+/* ---------- arranque ---------- */
+(async function init(){
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+  const set=await DB.get('set');if(set)S.set={...S.set,...set};applySet();
+  S.vocab=(await DB.get('vocab'))||[];S.prog=(await DB.get('prog'))||{};
+  $('#vcount').textContent=S.vocab.length;
+  S.books=await DB.books();
+  if(!S.books.length&&!(await DB.get('seeded'))){const b=mkBook(SAMPLE);S.books.push(b);await DB.putBook(b);await DB.set('seeded',true);}
+  renderLib();
+  chromeStatus().then(st=>{ENG.chrome.state=st;});
+  if(await DB.get('modelOn'))setTimeout(modelLoad,1500);
+  window.__lector={S,ENG,sentenceBounds,parseTxt,translate,showWord,renderChapter,openBook,modelLoad,chunkText};
+})();
+})();
+</script>
+</body>
+</html>
