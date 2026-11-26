@@ -1,29 +1,28 @@
-# Lector bilingüe (inglés → español)
+# Lector · aprende inglés leyendo (versión 4)
 
-Lee libros en inglés; toca una palabra, selecciona una frase o pide el párrafo y ve la traducción.
-App web instalable (PWA). **Sin cuentas, sin claves, sin pagos.**
+App web instalable (PWA), 100 % gratuita: sin cuentas, sin claves, sin servidores propios.
+Todo se guarda en tu dispositivo.
 
-## Archivos
-index.html · mt-worker.js · sw.js · manifest.webmanifest · icon-192.png · icon-512.png
+## Archivos (súbelos TODOS a la raíz del repositorio)
+index.html · sw.js · mt-worker.js · manifest.webmanifest · icon-192.png · icon-512.png
+jszip.min.js · pdf.min.js · pdf.worker.min.js   ← librerías para EPUB y PDF (ya no dependen de internet)
 
-## Publicarla gratis (elige una)
-**GitHub Pages**
-1. Crea un repositorio público en github.com y sube estos archivos (Add file → Upload files).
-2. Settings → Pages → Source: "Deploy from a branch" → Branch: main / (root) → Save.
-3. En ~1 minuto queda en https://TU-USUARIO.github.io/NOMBRE-REPO/
-Tus libros NO se suben: se guardan solo en tu navegador.
+## Actualizar en GitHub Pages
+1. En tu repositorio: Add file → Upload files → arrastra estos archivos (reemplazan a los anteriores) → Commit changes.
+2. Espera ~1 minuto y abre la app. Si aparece “Hay una versión nueva”, toca Actualizar.
+Tus libros, palabras y progreso NO se pierden al actualizar.
 
-**Cloudflare Pages / Netlify (más fácil):** entra a Netlify Drop (app.netlify.com/drop) y arrastra la carpeta.
+## Novedades v4
+- Diseño nuevo: inicio con racha, meta y “Continuar leyendo”; portadas; página de lectura tipo libro; barra inferior; hojas deslizantes en el celular; tema claro/sepia/oscuro.
+- Botón Aa: tipografía (Literata, Georgia, Inter), tamaño, interlineado, ancho, colores de palabras y voz.
+- Colores por nivel: azul punteado = nueva, amarillo = aprendiendo, sin color = conocida. ✓ marca una palabra como conocida; al final del capítulo puedes marcar todas las restantes.
+- Palabras clave del capítulo (✦): las nuevas que más se repiten, con definición en inglés.
+- Expresiones y phrasal verbs (give up, look forward to, turned it off, of course…): se detectan y se explican juntas.
+- Lectura en voz alta (▶) con la frase resaltada, velocidad y voz; “Leer desde aquí” en la ventana de una palabra.
+- Más robusta: aviso de actualización, funciona con internet lento, avisa si el dispositivo se queda sin espacio, divide capítulos muy largos, al borrar un libro limpia sus datos.
 
-**Probar en tu computador:** en la carpeta ejecuta `python3 -m http.server 8000` y abre http://localhost:8000
-(no funciona abriendo el .html con doble clic: los service workers y workers necesitan http/https).
+## Todo lo anterior sigue
+Diccionario inglés-inglés, traducción (Chrome, modelo local sin internet, Google), repaso espaciado SM-2,
+importar EPUB/PDF/TXT/JSON, búsqueda, marcadores, subrayados con notas, estadísticas y copia de seguridad (⚙ → Exportar).
 
-## Traducir sin internet
-Abre ⚙ Ajustes:
-- **Traductor de Chrome** (solo Chrome/Edge de escritorio): botón "Activar", descarga el idioma una vez.
-- **Modelo local** (cualquier navegador moderno): botón "Descargar" (~115 MB una sola vez).
-- Modo "Solo sin conexión": nunca usa internet para traducir.
-
-## Libros
-Arrastra .epub / .txt (Project Gutenberg, Standard Ebooks) o pega texto. También .json bilingüe:
-{"title":"...","chapters":[{"title":"Cap 1","paragraphs":[{"en":"...","es":"..."}]}]}
+Probar en tu computador: `python3 -m http.server 8000` en esta carpeta y abre http://localhost:8000
